@@ -1,56 +1,27 @@
-const SYMBOL_DB = [
-  ['아케인','소멸의 여로',200,20,40,8],
-  ['아케인','츄츄 아일랜드',210,20,40,10],
-  ['아케인','레헬른',220,20,40,12],
-  ['아케인','아르카나',225,20,40,14],
-  ['아케인','모라스',230,20,40,16],
-  ['아케인','에스페라',235,20,40,18],
-  ['그란디스','세르니움',260,11,30,13.2],
-  ['그란디스','호텔 아르크스',265,11,15,15],
-  ['그란디스','오디움',270,11,15,16.8],
-  ['그란디스','도원경',275,11,15,18.6],
-  ['그란디스','아르테리아',280,11,15,20.4],
-  ['그란디스','카르시온',285,11,15,22.2],
-  ['그란디스','탈라하트',290,11,15,39.8],
-  ['그란디스','기어드락',295,11,15,48.8]
-].map(([type,region,unlock,maxLevel,daily,base]) => ({type,region,unlock,maxLevel,daily,base}));
+import {
+  SYMBOL_DB,
+  BOSS_DB,
+  clamp,
+  getBossSelection,
+  bossTotal,
+  calculateWorldCrystalSummary,
+  getMp,
+  dailyExpAtLevel,
+  monsterParkWeeklyExp,
+  calculateLevelEta,
+  getSymbolMap,
+  symbolCalc,
+  symbolSummary,
+  seoulDateKey,
+  seoulWeeklyResetKey
+} from './core.js';
 
-const DAILY_EXP = [
-  [200,732132258],[210,2141658246],[220,3189098250],[225,3305187639],[230,4398266165],[235,4530843954],
-  [240,8397548775],[245,9057690000],[250,10225741680],[260,16455682080],[265,19372782409],[270,23246151120],
-  [275,32127015480],[280,38593455264],[285,45635222880],[290,89730912960],[295,105641078400]
-];
-
-const MP_DB = [
-  [200,'소멸의 여로',359915080],[210,'츄츄 아일랜드',1285078680],[220,'레헬른',3217660990],[225,'아르카나',4707573370],
-  [230,'모라스',5993511040],[235,'에스페라',6919667370],[240,'셀라스',8712814920],[245,'문브릿지',11716616500],
-  [250,'고통의 미궁',14058901000],[255,'리멘',15552557400],[260,'세르니움',37474604460],[265,'호텔 아르크스',44435446300],
-  [270,'오디움',52818835200],[275,'도원경',76639838000],[280,'아르테리아',107204032000],[285,'카르시온',156017856000],
-  [290,'탈라하트',218575316000]
-].map(([level,region,exp]) => ({level,region,exp}));
-
-const EXP_TABLE = {
-  200:2207026470,201:2471869646,202:2768494003,203:3100713283,204:3472798876,205:3889534741,206:4356278909,207:4879032378,208:5464516263,209:6120258214,
-  210:7344309856,211:8152183940,212:9048924173,213:10044305832,214:11149179473,215:13379015367,216:14583126750,217:15895608157,218:17326212891,219:18885572051,
-  220:22662686461,221:24249074513,222:25946509728,223:27762765408,224:29706158986,225:35647390783,226:38142708137,227:40812697706,228:43669586545,229:46726457603,
-  230:56071749123,231:57753901596,232:59486518643,233:61271114202,234:63109247628,235:75731097153,236:78003030067,237:80343120969,238:82753414598,239:85236017035,
-  240:102283220442,241:105351717055,242:108512268566,243:111767636622,244:115120665720,245:138144798864,246:142289142829,247:146557817113,248:150954551626,249:155483188174,
-  250:186579825808,251:192177220582,252:197942537199,253:203880813314,254:209997237713,255:216297154844,256:222786069489,257:229469651573,258:236353741120,259:243444353353,
-  260:1731919984062,261:1749239183902,262:1766731575741,263:1784398891498,264:1802242880412,265:2342915744535,266:2366344901980,267:2390008350999,268:2413908434508,269:2438047518853,
-  270:5412465491853,271:5466590146771,272:5521256048238,273:5576468608720,274:5632233294807,275:11377111255510,276:12514822381061,277:13766304619167,278:15142935081083,279:16657228589191,
-  280:33647601750165,281:37012361925181,282:40713598117699,283:44784957929468,284:49263453722414,285:99512176519276,286:109463394171203,287:120409733588323,288:132450706947155,289:145695777641870,
-  290:294305470836577,291:323736017920234,292:356109619712257,293:391720581683482,294:430892639851830,295:870403132500696,296:957443445750765,297:1053187790325840,298:1158506569358420,299:1737759854037630
-};
-
-const BOSS_DB = [
-  ['카오스 자쿰',8080000],['카오스 블러디퀸',8140000],['카오스 반반',8150000],['카오스 피에르',8170000],['하드 매그너스',8560000],['카오스 벨룸',9280000],
-  ['카오스 파풀라투스',13100000],['노멀 스우',16700000],['노멀 데미안',17500000],['노멀 가디언 엔젤 슬라임',25500000],['이지 루시드',29800000],['이지 윌',32300000],
-  ['노멀 루시드',35600000],['노멀 윌',41100000],['노멀 더스크',44000000],['노멀 듄켈',47500000],['하드 데미안',48900000],['하드 스우',51500000],
-  ['하드 루시드',62900000],['카오스 더스크',69800000],['노멀 진 힐라',71200000],['카오스 가디언 엔젤 슬라임',75100000],['하드 윌',77100000],['하드 듄켈',94400000],
-  ['하드 진 힐라',106000000],['노멀 선택받은 세렌',239000000],['이지 감시자 칼로스',280000000],['이지 최초의 대적자',308000000],['이지 카링',377000000],['노멀 감시자 칼로스',505000000]
-].map(([name,price]) => ({name,price}));
+const STORAGE_KEY = 'maple-personal-manager-v2';
+const LEGACY_STORAGE_KEY = 'maple-personal-manager-v1';
+const STATE_VERSION = 2;
 
 const SEED = {
+  version: STATE_VERSION,
   activeWorld: 'account2',
   worlds: {
     account1: { name: '계정 1', characters: [] },
@@ -64,297 +35,440 @@ const SEED = {
   }
 };
 
-const STORAGE_KEY = 'maple-personal-manager-v1';
-const $ = (q, root=document) => root.querySelector(q);
-const $$ = (q, root=document) => [...root.querySelectorAll(q)];
+const $ = (selector, root = document) => root.querySelector(selector);
 
-function deepClone(x) { return JSON.parse(JSON.stringify(x)); }
+function deepClone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function normalizeCharacter(character) {
+  const ch = {
+    name: String(character?.name || '').trim(),
+    targetLevel: Number(character?.targetLevel || 0),
+    mpRuns: clamp(character?.mpRuns, 0, 14),
+    dailyExpEnabled: character?.dailyExpEnabled !== false,
+    bossCap: String(character?.bossCap || ''),
+    manualExpRate: Number(character?.manualExpRate || 0),
+    cachedLevel: Number(character?.cachedLevel || 0),
+    api: character?.api || null,
+    apiError: character?.apiError || null,
+    tasks: character?.tasks || {}
+  };
+  resetTasksIfNeeded(ch);
+  return ch;
+}
+
+function resetTasksIfNeeded(character) {
+  character.tasks ||= {};
+  const dailyKey = seoulDateKey();
+  const weeklyKey = seoulWeeklyResetKey();
+  if (character.tasks.dailyKey !== dailyKey) {
+    character.tasks.daily = false;
+    character.tasks.mp = false;
+    character.tasks.dailyKey = dailyKey;
+  }
+  if (character.tasks.weeklyKey !== weeklyKey) {
+    character.tasks.boss = false;
+    character.tasks.weeklyKey = weeklyKey;
+  }
+}
+
+function normalizeState(raw) {
+  const base = deepClone(SEED);
+  if (!raw?.worlds) return base;
+  base.activeWorld = raw.activeWorld && raw.worlds[raw.activeWorld] ? raw.activeWorld : base.activeWorld;
+  for (const [id, fallbackWorld] of Object.entries(base.worlds)) {
+    const source = raw.worlds[id];
+    if (!source) continue;
+    fallbackWorld.name = String(source.name || fallbackWorld.name);
+    fallbackWorld.characters = Array.isArray(source.characters)
+      ? source.characters.map(normalizeCharacter).filter((ch) => ch.name)
+      : [];
+  }
+  base.version = STATE_VERSION;
+  return base;
+}
+
 function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return deepClone(SEED);
-    const parsed = JSON.parse(raw);
-    if (!parsed?.worlds) return deepClone(SEED);
-    return parsed;
-  } catch { return deepClone(SEED); }
+  for (const key of [STORAGE_KEY, LEGACY_STORAGE_KEY]) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      return normalizeState(JSON.parse(raw));
+    } catch {
+    }
+  }
+  return deepClone(SEED);
 }
-let state = loadState();
-function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
-function fmt(n) {
-  if (n === null || n === undefined || n === '' || Number.isNaN(Number(n))) return '-';
-  return Math.round(Number(n)).toLocaleString('ko-KR');
+let state = loadState();
+
+function saveState() {
+  state.version = STATE_VERSION;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
-function fmtMeso(n) { return n == null ? '-' : `${fmt(n)} 메소`; }
-function fmtWeeks(n) {
-  if (!Number.isFinite(n)) return '-';
-  const weeks = n;
-  if (weeks < 8) return `${weeks.toFixed(1)}주`;
+
+function fmt(value) {
+  if (value === null || value === undefined || value === '' || Number.isNaN(Number(value))) return '-';
+  return Math.round(Number(value)).toLocaleString('ko-KR');
+}
+
+function fmtCompact(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return '-';
+  if (Math.abs(numeric) >= 1e12) return `${(numeric / 1e12).toFixed(2)}조`;
+  if (Math.abs(numeric) >= 1e8) return `${(numeric / 1e8).toFixed(2)}억`;
+  if (Math.abs(numeric) >= 1e4) return `${(numeric / 1e4).toFixed(1)}만`;
+  return fmt(numeric);
+}
+
+function fmtMeso(value) {
+  return value === null || value === undefined ? '-' : `${fmt(value)} 메소`;
+}
+
+function fmtWeeks(value) {
+  if (!Number.isFinite(value)) return '-';
+  if (value === 0) return '완료';
+  const weeks = value;
   const days = Math.ceil(weeks * 7);
   const months = days / 30.4375;
+  if (weeks < 8) return `${weeks.toFixed(1)}주`;
   if (months < 24) return `${weeks.toFixed(1)}주 · 약 ${months.toFixed(1)}개월`;
-  return `${weeks.toFixed(1)}주 · 약 ${(months/12).toFixed(1)}년`;
-}
-function escapeHtml(s='') { return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
-
-function currentWorld() { return state.worlds[state.activeWorld]; }
-function getBossSelection(capName) {
-  const cap = BOSS_DB.find(b => b.name === capName);
-  if (!cap) return [];
-  return BOSS_DB.filter(b => b.price <= cap.price).sort((a,b)=>b.price-a.price).slice(0,12);
-}
-function bossTotal(ch) { return getBossSelection(ch.bossCap).reduce((a,b)=>a+b.price,0); }
-
-function getMp(level) {
-  let result = null;
-  for (const row of MP_DB) if (level >= row.level) result = row;
-  return result;
-}
-function dailyExpAtLevel(level) {
-  return DAILY_EXP.filter(([unlock]) => level >= unlock).reduce((sum,[,exp]) => sum + exp, 0);
-}
-function mpDailyAverage(level, runsPerWeek) {
-  const mp = getMp(level);
-  if (!mp || !runsPerWeek) return 0;
-  return mp.exp * runsPerWeek * 15 / 98;
-}
-function calculateLevelEta(level, expRate, target, dailyEnabled, mpRuns) {
-  level = Number(level); target = Number(target); expRate = Number(expRate || 0);
-  if (!level || !target || target <= level) return target === level ? 0 : null;
-  if (level < 200 || target > 300) return null;
-  let days = 0;
-  for (let lv=level; lv<target; lv++) {
-    const req = EXP_TABLE[lv];
-    if (!req) return null;
-    const remain = req * (lv === level ? Math.max(0, 1-expRate/100) : 1);
-    const perDay = (dailyEnabled ? dailyExpAtLevel(lv) : 0) + mpDailyAverage(lv, mpRuns);
-    if (perDay <= 0) return Infinity;
-    days += remain / perDay;
-  }
-  return days;
+  return `${weeks.toFixed(1)}주 · 약 ${(months / 12).toFixed(1)}년`;
 }
 
-function symbolRegionFromName(name='') {
-  const n = name.replace(/^어센틱심볼\s*:\s*/,'').replace(/^아케인심볼\s*:\s*/,'').replace(/^그랜드 어센틱심볼\s*:\s*/,'').trim();
-  const aliases = {'아르크스':'호텔 아르크스'};
-  return aliases[n] || n;
-}
-function reqAtLevel(type, lv) { return type === '아케인' ? lv*lv + 11 : 9*lv*lv + 20*lv; }
-function costAtLevel(db, lv) {
-  if (db.type === '아케인') return 10000 * Math.trunc((lv*lv+11) * (db.base + 0.1*lv));
-  return 100000 * Math.trunc((9*lv*lv+20*lv) * (db.base - 0.6*lv));
-}
-function symbolCalc(db, apiSymbol) {
-  if (!apiSymbol) return null;
-  const level = Number(apiSymbol.symbol_level || 0);
-  const growth = Number(apiSymbol.symbol_growth_count || 0);
-  if (!level) return null;
-  if (level >= db.maxLevel) return { level, growth, remainingSymbols:0, days:0, mesos:0, max:true };
-  let totalNeed = 0, mesos = 0;
-  for (let lv=level; lv<db.maxLevel; lv++) {
-    totalNeed += reqAtLevel(db.type, lv);
-    mesos += costAtLevel(db, lv);
-  }
-  const remainingSymbols = Math.max(0, totalNeed-growth);
-  return { level, growth, remainingSymbols, days:Math.ceil(remainingSymbols/db.daily), mesos, max:false };
-}
-function getSymbolMap(ch) {
-  const map = new Map();
-  for (const s of ch.api?.symbols || []) {
-    map.set(symbolRegionFromName(s.symbol_name), s);
-  }
-  return map;
-}
-function symbolSummary(ch) {
-  const level = Number(ch.api?.basic?.character_level || ch.cachedLevel || 0);
-  const map = getSymbolMap(ch);
-  const out = { arcaneMesos:0, grandisMesos:0, arcaneDays:0, grandisDays:0, missingArcane:false, missingGrandis:false };
-  for (const db of SYMBOL_DB) {
-    if (level < db.unlock) continue;
-    const calc = symbolCalc(db, map.get(db.region));
-    if (!calc) {
-      if (db.type === '아케인') out.missingArcane = true; else out.missingGrandis = true;
-      continue;
-    }
-    if (db.type === '아케인') {
-      out.arcaneMesos += calc.mesos; out.arcaneDays = Math.max(out.arcaneDays, calc.days);
-    } else {
-      out.grandisMesos += calc.mesos; out.grandisDays = Math.max(out.grandisDays, calc.days);
-    }
-  }
-  return out;
+function escapeHtml(value = '') {
+  return String(value).replace(/[&<>'"]/g, (char) => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;'
+  }[char]));
 }
 
-function characterExpRate(ch) {
-  const api = Number(ch.api?.basic?.character_exp_rate);
-  if (Number.isFinite(api)) return api;
-  const manual = Number(ch.manualExpRate);
-  return Number.isFinite(manual) ? manual : 0;
+function currentWorld() {
+  return state.worlds[state.activeWorld];
 }
-function characterLevel(ch) { return Number(ch.api?.basic?.character_level || ch.cachedLevel || 0); }
 
-async function apiFetchCharacter(ch) {
-  const res = await fetch(`/api/character?name=${encodeURIComponent(ch.name)}`, { cache:'no-store' });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.error || 'API 조회 실패');
-  ch.api = body;
-  ch.cachedLevel = Number(body.basic?.character_level || ch.cachedLevel || 0);
-  if (body.basic?.character_exp_rate !== undefined) ch.manualExpRate = Number(body.basic.character_exp_rate);
-  if (!ch.targetLevel || ch.targetLevel < ch.cachedLevel) ch.targetLevel = ch.cachedLevel;
-  ch.apiError = null;
-  saveState();
-  return body;
+function characterLevel(character) {
+  return Number(character.api?.basic?.character_level || character.cachedLevel || 0);
+}
+
+function characterExpRate(character) {
+  const apiRate = Number(character.api?.basic?.character_exp_rate);
+  if (Number.isFinite(apiRate)) return clamp(apiRate, 0, 100);
+  return clamp(character.manualExpRate, 0, 100);
+}
+
+function symbolsAvailable(character) {
+  if (!character.api) return false;
+  if (character.api.availability?.symbols === false) return false;
+  return Array.isArray(character.api.symbols);
+}
+
+function getCharacterSymbolSummary(character) {
+  return symbolSummary(characterLevel(character), character.api?.symbols || [], symbolsAvailable(character));
 }
 
 function avatarUrl(raw) {
   if (!raw) return '';
   try {
-    const u = new URL(raw);
-    u.searchParams.set('action','A00.1');
-    u.searchParams.set('emotion','E00');
-    u.searchParams.set('width','220');
-    u.searchParams.set('height','220');
-    return u.toString();
-  } catch { return raw; }
+    const url = new URL(raw);
+    url.searchParams.set('action', 'A00.1');
+    url.searchParams.set('emotion', 'E00');
+    url.searchParams.set('width', '240');
+    url.searchParams.set('height', '240');
+    return url.toString();
+  } catch {
+    return raw;
+  }
+}
+
+async function apiFetchCharacter(character) {
+  const response = await fetch(`/api/character?name=${encodeURIComponent(character.name)}`, { cache: 'no-store' });
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error(`서버 응답을 읽지 못했습니다. (${response.status})`);
+  }
+  if (!response.ok) throw new Error(body.error || `API 조회 실패 (${response.status})`);
+
+  character.api = body;
+  character.cachedLevel = Number(body.basic?.character_level || character.cachedLevel || 0);
+  const apiExpRate = Number(body.basic?.character_exp_rate);
+  if (Number.isFinite(apiExpRate)) character.manualExpRate = apiExpRate;
+  if (!character.targetLevel || character.targetLevel < character.cachedLevel) character.targetLevel = character.cachedLevel;
+  character.apiError = null;
+  saveState();
+  return body;
 }
 
 function renderWorldTabs() {
-  const root = $('#worldTabs'); root.innerHTML = '';
-  Object.entries(state.worlds).forEach(([id,w]) => {
-    const b = document.createElement('button');
-    b.className = `world-tab ${state.activeWorld===id?'active':''}`;
-    b.textContent = w.name;
-    b.onclick = () => { state.activeWorld=id; saveState(); render(); };
-    root.appendChild(b);
+  const root = $('#worldTabs');
+  root.innerHTML = '';
+  Object.entries(state.worlds).forEach(([id, world]) => {
+    const button = document.createElement('button');
+    button.className = `world-tab ${state.activeWorld === id ? 'active' : ''}`;
+    button.type = 'button';
+    button.innerHTML = `<span>${escapeHtml(world.name)}</span><small>${world.characters.length}캐릭</small>`;
+    button.onclick = () => {
+      state.activeWorld = id;
+      saveState();
+      render();
+    };
+    root.appendChild(button);
   });
 }
 
 function worldStats(world) {
-  const chars = world.characters;
-  const allCrystals = chars.flatMap(ch => getBossSelection(ch.bossCap).map(b=>b.price)).sort((a,b)=>b-a);
-  const top90 = allCrystals.slice(0,90);
-  const mp = chars.reduce((s,ch)=>s+Number(ch.mpRuns||0),0);
-  const symbolMesos = chars.reduce((s,ch)=>{ const x=symbolSummary(ch); return s+x.arcaneMesos+x.grandisMesos; },0);
-  return { count:chars.length, crystalCount:allCrystals.length, crystalMeso:top90.reduce((a,b)=>a+b,0), excluded:Math.max(0,allCrystals.length-90), mp, symbolMesos };
+  const crystals = calculateWorldCrystalSummary(world.characters, 90);
+  const mpRuns = world.characters.reduce((sum, ch) => sum + clamp(ch.mpRuns, 0, 14), 0);
+  let symbolMesos = 0;
+  let symbolCharacters = 0;
+  for (const ch of world.characters) {
+    const summary = getCharacterSymbolSummary(ch);
+    if (!summary.available) continue;
+    symbolMesos += summary.arcaneMesos + summary.grandisMesos;
+    symbolCharacters += 1;
+  }
+  return { ...crystals, mpRuns, symbolMesos, symbolCharacters, count: world.characters.length };
 }
+
 function renderSummary() {
-  const s = worldStats(currentWorld());
-  $('#worldSummary').innerHTML = [
-    ['등록 캐릭터', `${s.count}명`],
-    ['결정석', `${Math.min(s.crystalCount,90)}/90개`],
-    ['월드 결정석(상위90)', fmtMeso(s.crystalMeso)],
-    ['몬파 무료 배정', `${s.mp}/14회${s.mp>14?' · 초과':''}`],
-    ['전체 심볼 잔여비', fmtMeso(s.symbolMesos)]
-  ].map(([k,v])=>`<div class="summary-card"><span>${k}</span><b>${v}</b></div>`).join('');
+  const stats = worldStats(currentWorld());
+  const cards = [
+    ['관리 캐릭터', `${stats.count}명`, '계정 내 등록 캐릭터'],
+    ['결정석', `${stats.soldCount}/90개`, stats.excludedCount ? `저가 ${stats.excludedCount}개 제외` : '월드 상위 90개 기준'],
+    ['주간 결정석', fmtMeso(stats.mesos), '선택된 주보 기준'],
+    ['몬파 무료 배정', `${stats.mpRuns}/14회`, stats.mpRuns > 14 ? `월드 기준 ${stats.mpRuns - 14}회 초과` : '월드 기본 무료분 기준'],
+    ['심볼 잔여비', stats.symbolCharacters ? fmtMeso(stats.symbolMesos) : '-', stats.symbolCharacters ? `${stats.symbolCharacters}캐릭 API 기준` : 'API 갱신 필요']
+  ];
+  $('#worldSummary').innerHTML = cards.map(([label, value, note]) => `
+    <article class="summary-card">
+      <span>${label}</span>
+      <b>${value}</b>
+      <small>${note}</small>
+    </article>`).join('');
 }
 
-function bossOptions(selected='') {
-  return `<option value="">미설정</option>` + BOSS_DB.map(b=>`<option value="${escapeHtml(b.name)}" ${selected===b.name?'selected':''}>${escapeHtml(b.name)} · ${fmt(b.price)}</option>`).join('');
+function bossOptions(selected = '') {
+  return `<option value="">미설정</option>` + BOSS_DB.map((boss) => `
+    <option value="${escapeHtml(boss.name)}" ${selected === boss.name ? 'selected' : ''}>
+      ${escapeHtml(boss.name)} · ${fmtCompact(boss.price)}
+    </option>`).join('');
 }
 
-function renderSymbols(ch, root) {
-  const level = characterLevel(ch);
-  const map = getSymbolMap(ch);
-  const summary = symbolSummary(ch);
-  const weeklyBoss = bossTotal(ch);
-  const arcWeeks = weeklyBoss > 0 ? summary.arcaneMesos / weeklyBoss : Infinity;
-  const graWeeks = weeklyBoss > 0 ? summary.grandisMesos / weeklyBoss : Infinity;
-  $('.symbol-summary', root).innerHTML = `
-    <div class="summary-box"><span>아케인 잔여비</span><b>${summary.missingArcane?'API 확인 필요':fmtMeso(summary.arcaneMesos)}</b></div>
-    <div class="summary-box"><span>아케인 · 현재 주보 기준</span><b>${summary.missingArcane?'-':fmtWeeks(arcWeeks)}</b></div>
-    <div class="summary-box"><span>그란디스 잔여비</span><b>${summary.missingGrandis?'API 확인 필요':fmtMeso(summary.grandisMesos)}</b></div>
-    <div class="summary-box"><span>그란디스 · 현재 주보 기준</span><b>${summary.missingGrandis?'-':fmtWeeks(graWeeks)}</b></div>`;
+function renderSymbols(character, root) {
+  const level = characterLevel(character);
+  const available = symbolsAvailable(character);
+  const map = getSymbolMap(character.api?.symbols || []);
+  const summary = getCharacterSymbolSummary(character);
+  const weeklyBoss = bossTotal(character);
+
+  const summaryRoot = $('.symbol-summary', root);
+  if (!available) {
+    summaryRoot.innerHTML = `
+      <div class="inline-notice warning">심볼 API를 아직 불러오지 못했습니다. API 갱신 후 잔여 메소와 만렙 ETA를 계산합니다.</div>`;
+  } else {
+    const arcWeeks = weeklyBoss > 0 ? summary.arcaneMesos / weeklyBoss : Infinity;
+    const grandisWeeks = weeklyBoss > 0 ? summary.grandisMesos / weeklyBoss : Infinity;
+    summaryRoot.innerHTML = `
+      <div class="summary-box"><span>아케인리버 잔여비</span><b>${fmtMeso(summary.arcaneMesos)}</b><small>최장 ${summary.arcaneDays}일</small></div>
+      <div class="summary-box"><span>주보로 충당</span><b>${weeklyBoss ? fmtWeeks(arcWeeks) : '주보 미설정'}</b><small>현재 캐릭터 결정석 기준</small></div>
+      <div class="summary-box"><span>그란디스 잔여비</span><b>${fmtMeso(summary.grandisMesos)}</b><small>최장 ${summary.grandisDays}일</small></div>
+      <div class="summary-box"><span>주보로 충당</span><b>${weeklyBoss ? fmtWeeks(grandisWeeks) : '주보 미설정'}</b><small>현재 캐릭터 결정석 기준</small></div>`;
+  }
 
   const groups = [
-    ['아케인리버', SYMBOL_DB.filter(x=>x.type==='아케인')],
-    ['그란디스', SYMBOL_DB.filter(x=>x.type!=='아케인')]
+    ['아케인리버', SYMBOL_DB.filter((row) => row.type === '아케인')],
+    ['그란디스', SYMBOL_DB.filter((row) => row.type !== '아케인')]
   ];
+
   $('.symbol-groups', root).innerHTML = groups.map(([title, rows]) => {
-    const body = rows.filter(db => level >= db.unlock).map(db => {
-      const apiSymbol = map.get(db.region);
+    const unlocked = rows.filter((db) => level >= db.unlock);
+    const body = unlocked.map((db) => {
+      if (!available) {
+        return `<div class="symbol-row muted-row"><div class="symbol-name"><b>${db.region}</b></div><span>-</span><span>API 필요</span><span>-</span><span>-</span></div>`;
+      }
+      const apiSymbol = map.get(db.region) || null;
       const calc = symbolCalc(db, apiSymbol);
-      if (!apiSymbol) return `<div class="symbol-row"><div class="symbol-name"><b>${db.region}</b></div><span>-</span><span>API 미조회</span><span class="hide-mobile">-</span><span class="hide-mobile">-</span></div>`;
-      const req = apiSymbol.symbol_require_growth_count;
+      const requirement = apiSymbol?.symbol_require_growth_count;
+      const levelText = apiSymbol ? `Lv.${calc.level}` : '미보유';
+      const growthText = apiSymbol ? `${fmt(calc.growth)}${requirement ? ` / ${fmt(requirement)}` : ''}` : 'Lv.1 기준';
+      const icon = apiSymbol?.symbol_icon
+        ? `<img src="${escapeHtml(apiSymbol.symbol_icon)}" alt="" loading="lazy">`
+        : `<span class="symbol-dot"></span>`;
       return `<div class="symbol-row">
-        <div class="symbol-name">${apiSymbol.symbol_icon?`<img src="${escapeHtml(apiSymbol.symbol_icon)}" alt="">`:''}<b>${db.region}</b></div>
-        <span class="symbol-level">Lv.${calc.level}</span>
-        <span>${fmt(calc.growth)}${req?` / ${fmt(req)}`:''}</span>
-        <span class="hide-mobile">${calc.days}일</span>
-        <span class="hide-mobile">${fmtMeso(calc.mesos)}</span>
+        <div class="symbol-name">${icon}<b>${db.region}</b></div>
+        <span class="symbol-level">${levelText}</span>
+        <span>${growthText}</span>
+        <span>${calc.days}일</span>
+        <span>${fmtMeso(calc.mesos)}</span>
       </div>`;
     }).join('');
-    return `<div class="symbol-group"><h5>${title}</h5>${body || '<div class="symbol-row"><div class="symbol-name"><b>미해금</b></div></div>'}</div>`;
+
+    return `<section class="symbol-group">
+      <div class="symbol-group-head"><h5>${title}</h5><span>지역</span><span>Lv</span><span>성장치</span><span>만렙</span><span>잔여 메소</span></div>
+      ${body || '<div class="symbol-empty">아직 해금된 심볼이 없습니다.</div>'}
+    </section>`;
   }).join('');
 }
 
-function renderCharacter(ch, idx) {
-  const tpl = $('#characterTemplate').content.cloneNode(true);
-  const card = $('.character-card', tpl);
-  const level = characterLevel(ch);
-  const expRate = characterExpRate(ch);
-  const basic = ch.api?.basic || {};
-  $('.character-name', card).textContent = ch.name;
-  $('.character-meta', card).textContent = level ? `${basic.character_class || ''} · Lv.${level} · ${basic.world_name || ''}` : 'API 갱신 필요';
-  $('.combat-power', card).textContent = ch.api?.combatPower ? `전투력 ${Number(ch.api.combatPower).toLocaleString('ko-KR')}` : '';
-  $('.api-time', card).textContent = ch.api?.fetchedAt ? `갱신 ${new Date(ch.api.fetchedAt).toLocaleString('ko-KR')}` : (ch.apiError || '');
-  if (ch.apiError) $('.api-time', card).classList.add('error');
-  const img = $('.character-image', card);
-  const src = avatarUrl(basic.character_image);
-  if (src) { img.src = src; img.style.display='block'; } else img.style.display='none';
+function renderCharacter(character, index) {
+  resetTasksIfNeeded(character);
+  const fragment = $('#characterTemplate').content.cloneNode(true);
+  const card = $('.character-card', fragment);
+  const level = characterLevel(character);
+  const expRate = characterExpRate(character);
+  const basic = character.api?.basic || {};
+  const partialWarnings = character.api?.warnings || [];
 
-  $('.level-badge', card).textContent = level ? `Lv.${level} · ${expRate.toFixed(3)}%` : '미조회';
-  $('.exp-fill', card).style.width = `${Math.max(0,Math.min(100,expRate))}%`;
-  $('.current-exp', card).value = expRate || '';
-  $('.target-level', card).value = ch.targetLevel || (level || '');
-  $('.mp-runs', card).value = ch.mpRuns ?? 0;
-  $('.daily-exp-enabled', card).checked = ch.dailyExpEnabled !== false;
-  $('.task-daily', card).checked = Boolean(ch.tasks?.daily);
-  $('.task-mp', card).checked = Boolean(ch.tasks?.mp);
-  $('.task-boss', card).checked = Boolean(ch.tasks?.boss);
-  $('.boss-cap', card).innerHTML = bossOptions(ch.bossCap);
+  $('.character-name', card).textContent = character.name;
+  $('.character-meta', card).textContent = level
+    ? `${basic.character_class || '직업 미확인'} · Lv.${level} · ${basic.world_name || '월드 미확인'}`
+    : 'API 갱신 필요';
+  $('.combat-power', card).textContent = character.api?.combatPower
+    ? `전투력 ${fmt(character.api.combatPower)}`
+    : '전투력 -';
 
-  const eta = calculateLevelEta(level, expRate, Number(ch.targetLevel || level), ch.dailyExpEnabled !== false, Number(ch.mpRuns||0));
+  const apiState = $('.character-api-state', card);
+  if (character.apiError) {
+    apiState.textContent = character.apiError;
+    apiState.classList.add('error');
+  } else if (partialWarnings.length) {
+    apiState.textContent = `부분 조회 · ${partialWarnings.join(' / ')}`;
+    apiState.classList.add('warn');
+  } else if (character.api?.fetchedAt) {
+    apiState.textContent = `API ${new Date(character.api.fetchedAt).toLocaleString('ko-KR')} 갱신`;
+    apiState.classList.add('good-text');
+  } else {
+    apiState.textContent = '아직 API를 조회하지 않았습니다.';
+  }
+
+  const image = $('.character-image', card);
+  const placeholder = $('.avatar-placeholder', card);
+  const source = avatarUrl(basic.character_image);
+  if (source) {
+    image.src = source;
+    image.hidden = false;
+    placeholder.hidden = true;
+    image.onerror = () => {
+      image.hidden = true;
+      placeholder.hidden = false;
+    };
+  } else {
+    image.hidden = true;
+    placeholder.hidden = false;
+  }
+
+  $('.level-badge', card).textContent = level ? `Lv.${level}` : '미조회';
+  $('.exp-caption', card).textContent = `${expRate.toFixed(3)}%`;
+  $('.exp-fill', card).style.width = `${expRate}%`;
+
+  const expInput = $('.current-exp', card);
+  expInput.value = expRate || '';
+  expInput.readOnly = Boolean(character.api?.basic?.character_level);
+  expInput.title = expInput.readOnly ? 'API 조회값입니다.' : 'API 미조회 시 수동 입력값을 사용합니다.';
+  $('.target-level', card).value = character.targetLevel || (level || '');
+  $('.mp-runs', card).value = clamp(character.mpRuns, 0, 14);
+  $('.daily-exp-enabled', card).checked = character.dailyExpEnabled !== false;
+  $('.task-daily', card).checked = Boolean(character.tasks?.daily);
+  $('.task-mp', card).checked = Boolean(character.tasks?.mp);
+  $('.task-boss', card).checked = Boolean(character.tasks?.boss);
+  $('.daily-reset-label', card).textContent = `오늘 ${seoulDateKey()} 기준`;
+  $('.weekly-reset-label', card).textContent = `주간 ${seoulWeeklyResetKey()}(목) 기준`;
+  $('.boss-cap', card).innerHTML = bossOptions(character.bossCap);
+
+  const target = Number(character.targetLevel || level);
+  const eta = calculateLevelEta(level, expRate, target, character.dailyExpEnabled !== false, character.mpRuns);
   const mp = getMp(level);
-  const dailyExp = ch.dailyExpEnabled !== false ? dailyExpAtLevel(level) : 0;
+  const dailyExp = character.dailyExpEnabled !== false ? dailyExpAtLevel(level) : 0;
+  const mpWeek = monsterParkWeeklyExp(level, character.mpRuns);
   $('.level-metrics', card).innerHTML = `
-    <div class="metric"><span>일퀘 EXP/일</span><b>${fmt(dailyExp)}</b></div>
-    <div class="metric"><span>몬파</span><b>${mp?`${mp.region} · ${fmt(mp.exp)}`:'-'}</b></div>
-    <div class="metric"><span>목표까지</span><b>${eta===Infinity?'루틴 없음':eta==null?'-':`${eta.toFixed(1)}일`}</b></div>
-    <div class="metric"><span>예상 달성일</span><b>${Number.isFinite(eta)?new Date(Date.now()+Math.ceil(eta)*86400000).toLocaleDateString('ko-KR'):'-'}</b></div>`;
+    <div class="metric"><span>일퀘 EXP/일</span><b>${fmt(dailyExp)}</b><small>해금 지역 합산</small></div>
+    <div class="metric"><span>몬파 주간 EXP</span><b>${mp ? fmt(mpWeek) : '-'}</b><small>${mp ? `${mp.region} · 일요일 보너스 평균 반영` : '미해금'}</small></div>
+    <div class="metric"><span>목표까지</span><b>${eta === Infinity ? '루틴 없음' : eta == null ? '-' : `${eta.toFixed(1)}일`}</b><small>Lv.${target || '-'}</small></div>
+    <div class="metric"><span>예상 달성일</span><b>${Number.isFinite(eta) ? new Date(Date.now() + Math.ceil(eta) * 86400000).toLocaleDateString('ko-KR') : '-'}</b><small>일퀘·몬파만 계산</small></div>`;
 
-  const selected = getBossSelection(ch.bossCap);
-  const total = selected.reduce((s,b)=>s+b.price,0);
+  const selectedBosses = getBossSelection(character.bossCap);
+  const totalBossMesos = selectedBosses.reduce((sum, boss) => sum + boss.price, 0);
   $('.boss-metrics', card).innerHTML = `
-    <div class="metric"><span>결정석 개수</span><b>${selected.length}/12</b></div>
-    <div class="metric"><span>캐릭 주간 결정석</span><b>${fmtMeso(total)}</b></div>`;
-  $('.boss-list', card).textContent = selected.map(b=>b.name).join(' · ') || '주간보스 상한을 선택하세요.';
-  renderSymbols(ch, card);
+    <div class="metric"><span>선정 결정석</span><b>${selectedBosses.length}/12개</b><small>상한 이하 진행도 기준</small></div>
+    <div class="metric"><span>캐릭 주간 결정석</span><b>${fmtMeso(totalBossMesos)}</b><small>1인 판매가 기준</small></div>`;
+  $('.boss-list', card).innerHTML = selectedBosses.length
+    ? selectedBosses.map((boss) => `<span>${escapeHtml(boss.name)} <b>${fmtCompact(boss.price)}</b></span>`).join('')
+    : '<em>주간보스 상한을 선택하세요.</em>';
+
+  renderSymbols(character, card);
 
   $('.refresh-character', card).onclick = async () => {
-    const btn = $('.refresh-character', card); btn.disabled=true; btn.textContent='조회 중';
-    try { await apiFetchCharacter(ch); } catch (e) { ch.apiError=e.message; saveState(); }
-    btn.disabled=false; render();
+    const button = $('.refresh-character', card);
+    button.disabled = true;
+    button.textContent = '조회 중…';
+    try {
+      await apiFetchCharacter(character);
+    } catch (error) {
+      character.apiError = error.message;
+      saveState();
+    }
+    render();
   };
+
   $('.remove-character', card).onclick = () => {
-    if (!confirm(`${ch.name} 캐릭터를 관리 목록에서 삭제할까요?`)) return;
-    currentWorld().characters.splice(idx,1); saveState(); render();
+    if (!confirm(`${character.name} 캐릭터를 관리 목록에서 삭제할까요?`)) return;
+    currentWorld().characters.splice(index, 1);
+    saveState();
+    render();
   };
-  $('.current-exp', card).onchange = e => { ch.manualExpRate=Number(e.target.value||0); saveState(); render(); };
-  $('.target-level', card).onchange = e => { ch.targetLevel=Number(e.target.value||0); saveState(); render(); };
-  $('.mp-runs', card).onchange = e => { ch.mpRuns=Math.max(0,Math.min(14,Number(e.target.value||0))); saveState(); render(); };
-  $('.daily-exp-enabled', card).onchange = e => { ch.dailyExpEnabled=e.target.checked; saveState(); render(); };
-  $('.boss-cap', card).onchange = e => { ch.bossCap=e.target.value; saveState(); render(); };
-  for (const [sel,key] of [['.task-daily','daily'],['.task-mp','mp'],['.task-boss','boss']]) {
-    $(sel, card).onchange = e => { ch.tasks ||= {}; ch.tasks[key]=e.target.checked; saveState(); };
+
+  expInput.onchange = (event) => {
+    if (expInput.readOnly) return;
+    character.manualExpRate = clamp(event.target.value, 0, 100);
+    saveState();
+    render();
+  };
+  $('.target-level', card).onchange = (event) => {
+    character.targetLevel = clamp(event.target.value, 200, 300);
+    saveState();
+    render();
+  };
+  $('.mp-runs', card).onchange = (event) => {
+    character.mpRuns = clamp(event.target.value, 0, 14);
+    saveState();
+    render();
+  };
+  $('.daily-exp-enabled', card).onchange = (event) => {
+    character.dailyExpEnabled = event.target.checked;
+    saveState();
+    render();
+  };
+  $('.boss-cap', card).onchange = (event) => {
+    character.bossCap = event.target.value;
+    saveState();
+    render();
+  };
+
+  for (const [selector, key] of [['.task-daily','daily'], ['.task-mp','mp'], ['.task-boss','boss']]) {
+    $(selector, card).onchange = (event) => {
+      character.tasks ||= {};
+      character.tasks[key] = event.target.checked;
+      character.tasks.dailyKey = seoulDateKey();
+      character.tasks.weeklyKey = seoulWeeklyResetKey();
+      saveState();
+      renderSummary();
+    };
   }
-  return tpl;
+
+  return fragment;
 }
 
 function renderCharacters() {
-  const list = $('#characterList'); list.innerHTML='';
-  const chars = currentWorld().characters;
-  if (!chars.length) { list.innerHTML='<div class="empty">등록된 캐릭터가 없습니다. 캐릭터명을 추가하세요.</div>'; return; }
-  chars.forEach((ch,i) => list.appendChild(renderCharacter(ch,i)));
+  const list = $('#characterList');
+  list.innerHTML = '';
+  const characters = currentWorld().characters;
+  if (!characters.length) {
+    list.innerHTML = '<div class="empty"><b>등록된 캐릭터가 없습니다.</b><span>위 검색창에 닉네임을 입력하면 공식 API 정보가 자동으로 연결됩니다.</span></div>';
+    return;
+  }
+  characters.forEach((character, index) => list.appendChild(renderCharacter(character, index)));
 }
 
 function render() {
@@ -362,37 +476,64 @@ function render() {
   renderSummary();
   $('#worldTitle').textContent = currentWorld().name;
   renderCharacters();
+  saveState();
 }
 
 async function refreshAll() {
-  const btn = $('#refreshAllBtn'); btn.disabled=true; btn.textContent='전체 갱신 중';
-  for (const ch of currentWorld().characters) {
-    try { await apiFetchCharacter(ch); } catch (e) { ch.apiError=e.message; saveState(); }
-    render();
+  const button = $('#refreshAllBtn');
+  button.disabled = true;
+  button.textContent = '전체 갱신 중…';
+  for (const character of currentWorld().characters) {
+    try {
+      await apiFetchCharacter(character);
+    } catch (error) {
+      character.apiError = error.message;
+      saveState();
+    }
   }
-  btn.disabled=false; btn.textContent='전체 API 갱신';
+  button.disabled = false;
+  button.textContent = '전체 API 갱신';
+  render();
 }
 
-$('#addCharacterForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+$('#addCharacterForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
   const input = $('#characterNameInput');
   const name = input.value.trim();
   if (!name) return;
-  if (currentWorld().characters.some(c=>c.name===name)) { alert('이미 등록된 캐릭터입니다.'); return; }
-  const ch = { name, targetLevel:0, mpRuns:0, dailyExpEnabled:true, bossCap:'' };
-  currentWorld().characters.push(ch); saveState(); input.value=''; render();
-  try { await apiFetchCharacter(ch); } catch (err) { ch.apiError=err.message; saveState(); }
+  if (currentWorld().characters.some((character) => character.name.toLowerCase() === name.toLowerCase())) {
+    alert('이미 등록된 캐릭터입니다.');
+    return;
+  }
+
+  const character = normalizeCharacter({ name, targetLevel: 0, mpRuns: 0, dailyExpEnabled: true, bossCap: '' });
+  currentWorld().characters.push(character);
+  saveState();
+  input.value = '';
+  render();
+
+  try {
+    await apiFetchCharacter(character);
+  } catch (error) {
+    character.apiError = error.message;
+    saveState();
+  }
   render();
 });
+
 $('#refreshAllBtn').onclick = refreshAll;
 
-(async function health() {
+(async function checkHealth() {
+  const chip = $('#apiStatus');
   try {
-    const res = await fetch('/api/health', {cache:'no-store'}); const x = await res.json();
-    const chip = $('#apiStatus');
-    chip.textContent = x.apiKeyConfigured ? 'API Key 설정됨' : 'API Key 필요';
-    chip.classList.add(x.apiKeyConfigured ? 'good' : 'warn');
-  } catch { $('#apiStatus').textContent='서버 확인 필요'; }
+    const response = await fetch('/api/health', { cache: 'no-store' });
+    const result = await response.json();
+    chip.textContent = result.apiKeyConfigured ? 'NEXON API 연결 준비' : 'API Key 설정 필요';
+    chip.classList.add(result.apiKeyConfigured ? 'good' : 'warn');
+  } catch {
+    chip.textContent = '로컬 서버 확인 필요';
+    chip.classList.add('error-chip');
+  }
 })();
 
 render();
