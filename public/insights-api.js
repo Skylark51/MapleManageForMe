@@ -31,9 +31,13 @@ export async function fetchOptimizationBundle(character,accountId){
   const endpoints={
     stat:`/character/stat${q}`,
     hyper:`/character/hyper-stat${q}`,
+    ability:`/character/ability${q}`,
     link:`/character/link-skill${q}`,
+    hexa:`/character/hexamatrix${q}`,
     hexaStat:`/character/hexamatrix-stat${q}`,
     equipment:`/character/item-equipment${q}`,
+    setEffect:`/character/set-effect${q}`,
+    otherStat:`/character/other-stat${q}`,
     dojang:`/character/dojang${q}`,
     union:`/user/union${q}`,
     unionRaider:`/user/union-raider${q}`,
