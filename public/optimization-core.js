@@ -76,10 +76,10 @@ export function bossRecommendations(snapshot, bossDefense=300) {
   const s = snapshot || {};
   const targetIed = bossDefense >= 380 ? 97 : bossDefense >= 300 ? 95 : 93;
   const rows = [];
-  if (s.critRate < 100) rows.push({key:'크확',severity:100-s.critRate,title:'크리티컬 확률',current:s.critRate,target:100,reason:'100% 도달 전까지 가장 먼저 보정'});
-  if (s.ignoreDefense < targetIed) rows.push({key:'방무',severity:(targetIed-s.ignoreDefense)*2,title:'방어율 무시',current:s.ignoreDefense,target:targetIed,reason:`방어율 ${bossDefense}% 기준 권장선`});
-  rows.push({key:'크뎀',severity:24,title:'크리티컬 데미지',current:s.critDamage,target:null,reason:'보스 세팅의 고효율 범용 옵션'});
-  rows.push({key:'보공',severity:20,title:'보스 데미지',current:s.bossDamage,target:null,reason:'보스 전용 증폭 옵션'});
+  if (s.critRate < 100) rows.push({key:'크확',severity:1000+(100-s.critRate),title:'크리티컬 확률',current:s.critRate,target:100,reason:'하이퍼·유니온·링크에서 100%까지 먼저 보정'});
+  if (s.ignoreDefense < targetIed) rows.push({key:'방무',severity:500+(targetIed-s.ignoreDefense)*2,title:'방어율 무시',current:s.ignoreDefense,target:targetIed,reason:`유니온·하이퍼·링크 방무를 우선 검토 · 방어율 ${bossDefense}% 비교 기준`});
+  rows.push({key:'크뎀',severity:24,title:'크리티컬 데미지',current:s.critDamage,target:null,reason:'유니온 크뎀 점령과 프리셋을 우선 검토'});
+  rows.push({key:'보공',severity:20,title:'보스 데미지',current:s.bossDamage,target:null,reason:'하이퍼·유니온 보공 및 보스용 링크를 검토'});
   rows.push({key:'데미지',severity:12,title:'데미지',current:s.damage,target:null,reason:'보공 다음 보완 옵션'});
   rows.push({key:'공마',severity:8,title:'공격력 / 마력',current:Math.max(s.attack,s.magic),target:null,reason:'남는 자원으로 보완'});
   return rows.sort((a,b)=>b.severity-a.severity);
@@ -88,7 +88,7 @@ export function bossRecommendations(snapshot, bossDefense=300) {
 export function huntingRecommendations(snapshot) {
   const s = snapshot || {};
   const rows = [];
-  if (s.critRate < 100) rows.push({key:'크확',severity:100-s.critRate,title:'크리티컬 확률',current:s.critRate,target:100,reason:'사냥에서도 100% 우선 확보'});
+  if (s.critRate < 100) rows.push({key:'크확',severity:1000+(100-s.critRate),title:'크리티컬 확률',current:s.critRate,target:100,reason:'유니온·하이퍼·링크로 100% 우선 확보'});
   rows.push({key:'일몹뎀',severity:30,title:'일반 몬스터 데미지',current:s.normalDamage,target:null,reason:'하이퍼스탯 사냥 프리셋 최우선 후보'});
   rows.push({key:'크뎀',severity:22,title:'크리티컬 데미지',current:s.critDamage,target:null,reason:'원킬컷과 설치기 컷 동시 개선'});
   rows.push({key:'데미지',severity:16,title:'데미지',current:s.damage,target:null,reason:'일몹뎀 이후 범용 보완'});
@@ -116,11 +116,11 @@ export function unionPlan(profile='boss', cells=0, snapshot={}) {
   let weights;
   if (profile === 'hunt') {
     weights = [
-      ['크리티컬 데미지',0.30],['크리티컬 확률',snapshot.critRate < 100 ? 0.22 : 0.08],['주스탯/공격력',0.28],['버프 지속시간',0.12],['방어율 무시',0.08]
+      ['크리티컬 데미지',0.32],['크리티컬 확률',snapshot.critRate < 100 ? 0.23 : 0.08],['주스탯/공격력',0.32],['방어율 무시',0.08],['직업 특화 영역',0.05]
     ];
   } else {
     weights = [
-      ['크리티컬 데미지',0.28],['방어율 무시',snapshot.ignoreDefense < 95 ? 0.27 : 0.15],['보스 데미지',0.25],['크리티컬 확률',snapshot.critRate < 100 ? 0.12 : 0.04],['버프 지속시간/주스탯',0.08]
+      ['크리티컬 데미지',0.29],['방어율 무시',snapshot.ignoreDefense < 95 ? 0.29 : 0.16],['보스 데미지',0.27],['크리티컬 확률',snapshot.critRate < 100 ? 0.10 : 0.03],['주스탯/공격력',0.08]
     ];
   }
   const total = weights.reduce((s,[,w])=>s+w,0);
