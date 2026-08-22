@@ -54,6 +54,7 @@ function ensureManualPortrait(button){
     fallback.hidden=true;
     frame.appendChild(fallback);
   }
+  frame.classList.remove('placeholder');
   applyPortrait(img,name);
 }
 
@@ -80,6 +81,8 @@ function ensureGalleryPortrait(card){
 function repairBossPortraits(){
   document.querySelectorAll('.manual-boss-button').forEach(ensureManualPortrait);
   document.querySelectorAll('.boss-gallery .boss-card').forEach(ensureGalleryPortrait);
+  const note=document.querySelector('.boss-gallery')?.closest('.opt-panel')?.querySelector('.opt-panel-title small');
+  if(note)note.textContent='보스 전용 초상 이미지 사용 · 주요 보상 합성 이미지는 사용하지 않습니다.';
 }
 
 function schedule(){
