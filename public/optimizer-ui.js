@@ -24,17 +24,11 @@ function reportPanel(report,mode){
   const gain=Math.max(-99,report.gainPct||0);
   return `<section class="opt-panel real-optimizer" data-mm-real-optimizer>
     <div class="opt-panel-title"><div><span>CALCULATED OPTIMIZER</span><h3>${mode==='boss'?'보스':'사냥'} 세팅 계산 최적화</h3></div><small>API 현재값 + 공식 하이퍼/유니온 수치 기반</small></div>
-    <div class="calc-kpis">
-      <div><span>현재 상대지표</span><b>100.00</b></div>
-      <div class="recommended"><span>추천 상대지표</span><b>${num(100*(1+gain/100),2)}</b></div>
-      <div class="gain"><span>재배치 기대 변화</span><b>${gain>=0?'+':''}${num(gain,2)}%</b></div>
-      <div><span>하이퍼 포인트</span><b>${Math.round(report.hyperPoints||0).toLocaleString('ko-KR')}</b></div>
-      <div><span>유니온 특수칸</span><b>${Math.round(report.unionCells||0)}${report.unionEstimated?'*':''}</b></div>
-    </div>
+    <div class="calc-kpis"><div><span>현재 상대지표</span><b>100.00</b></div><div class="recommended"><span>추천 상대지표</span><b>${num(100*(1+gain/100),2)}</b></div><div class="gain"><span>재배치 기대 변화</span><b>${gain>=0?'+':''}${num(gain,2)}%</b></div><div><span>하이퍼 포인트</span><b>${Math.round(report.hyperPoints||0).toLocaleString('ko-KR')}</b></div><div><span>유니온 특수칸</span><b>${Math.round(report.unionCells||0)}${report.unionEstimated?'*':''}</b></div></div>
     <div class="calc-grid">${diffTable(hyper,'하이퍼스탯')}${diffTable(union,'유니온 점령')}</div>
-    <div class="calc-logic"><b>계산 로직</b><span>${mode==='boss'?'크확은 100%에서 상한 처리하고, 보공·데미지·크뎀·공/마·주스탯과 방무를 함께 비교합니다. 방무는 단순 합산이 아니라 곱연산으로 적용한 뒤 대상 보스 방어율을 반영합니다.':'크확 100% 상한, 일몹뎀·데미지·크뎀·공/마·주스탯을 동시에 비교합니다.'} 각 다음 레벨/칸의 <em>상대 화력 증가량 ÷ 소모 포인트</em>가 가장 큰 항목을 반복 선택합니다.</span></div>
-    ${report.unionEstimated?'<p class="calc-warning">* 유니온 `union_occupied_stat`에서 특수칸을 직접 복원하지 못해 전체 배치 셀에서 내부 15칸을 제외한 값으로 추정했습니다.</p>':''}
-    <p class="calc-disclaimer">이 값은 MapleScouter의 비공개 환산 공식을 복제한 최종뎀이 아니라, 현재 공개 API 값에서 동일 자원을 재배치했을 때의 비교 지표입니다. 링크/어빌리티의 조건부 효과와 직업별 딜사이클은 별도 판단 대상입니다.</p>
+    <div class="calc-logic"><b>계산 로직</b><span>${mode==='boss'?'크확은 100%에서 상한 처리하고, 보공·데미지·크뎀·공/마·주스탯과 방무를 함께 비교합니다. 방무는 곱연산으로 적용한 뒤 대상 보스 방어율을 반영합니다.':'크확 100% 상한, 일몹뎀·데미지·크뎀·공/마·주스탯을 동시에 비교합니다.'} 각 다음 레벨/칸의 <em>상대 화력 증가량 ÷ 소모 포인트</em>가 가장 큰 항목을 반복 선택합니다.</span></div>
+    ${report.unionEstimated?'<p class="calc-warning">* 유니온 특수칸을 직접 복원하지 못해 전체 배치 셀에서 내부 15칸을 제외한 값으로 추정했습니다.</p>':''}
+    <p class="calc-disclaimer">MapleScouter의 비공개 환산식을 복제한 최종뎀이 아니라, 현재 공개 API 값에서 동일 자원을 재배치했을 때의 비교 지표입니다. 링크/어빌리티 조건부 효과와 직업별 딜사이클은 별도 판단 대상입니다.</p>
   </section>`;
 }
 function specPanel(bundle,def){
@@ -43,9 +37,11 @@ function specPanel(bundle,def){
 }
 function render(){
   const workspace=document.querySelector('#optimizationWorkspace');if(!workspace||workspace.hidden)return;
-  const tab=localStorage.getItem(TAB_KEY)||'dashboard';
-  if(!['boss-opt','hunt','spec-order'].includes(tab))return;
+  const tab=localStorage.getItem(TAB_KEY)||'dashboard';if(!['boss-opt','hunt','spec-order'].includes(tab))return;
   const ctx=context();if(!ctx.bundle)return;
+  const signature=[tab,ctx.accountId,ctx.character?.name||'',ctx.bossDefense,ctx.bundle.fetchedAt||''].join('|');
+  const existing=workspace.querySelector('[data-mm-real-optimizer]');
+  if(existing?.dataset.mmSignature===signature)return;
   workspace.querySelectorAll('[data-mm-real-optimizer]').forEach(n=>n.remove());
   let html='';
   if(tab==='boss-opt')html=reportPanel(optimizeSettings(ctx.bundle,'boss',ctx.bossDefense),'boss');
@@ -53,6 +49,7 @@ function render(){
   else html=specPanel(ctx.bundle,ctx.bossDefense);
   const first=workspace.querySelector('.opt-panel,.spec-order-hero');
   if(first)first.insertAdjacentHTML('afterend',html);else workspace.insertAdjacentHTML('beforeend',html);
+  const inserted=workspace.querySelector('[data-mm-real-optimizer]');if(inserted)inserted.dataset.mmSignature=signature;
 }
 function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;render()})}
 new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});
