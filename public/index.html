@@ -3,156 +3,190 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#f5f7f4" />
-  <title>메할일 — 개인 메이플 관리</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <meta name="theme-color" content="#f6f7fb" />
+  <meta name="description" content="NEXON Open API 기반 개인 메이플스토리 캐릭터 관리 대시보드" />
+  <title>MapleManage — 개인 메이플 관리</title>
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <header class="site-header">
-    <div class="header-inner">
-      <a class="brand" href="/" aria-label="메할일 홈">
+  <div class="app-layout">
+    <aside class="sidebar">
+      <a class="brand" href="./">
         <span class="brand-mark">M</span>
-        <span><b>메할일</b><small>PERSONAL MAPLE MANAGER</small></span>
+        <span class="brand-copy"><b>MapleManage</b><small>PERSONAL DASHBOARD</small></span>
       </a>
-      <nav class="header-nav" aria-label="주요 기능">
-        <a href="#dashboard">대시보드</a>
-        <a href="#characters">캐릭터</a>
-        <a href="#characters">심볼</a>
-        <a href="#characters">주간보스</a>
-      </nav>
-      <div class="header-actions">
-        <span id="apiStatus" class="status-chip">API 확인 중</span>
-        <button id="refreshAllBtn" class="btn primary" type="button">전체 API 갱신</button>
+
+      <section class="side-section">
+        <div class="side-label">MY ACCOUNTS</div>
+        <div id="worldTabs" class="account-tabs"></div>
+      </section>
+
+      <section class="side-section account-connect">
+        <div class="side-section-head">
+          <div>
+            <div class="side-label">NEXON OPEN API</div>
+            <b id="accountConnectTitle">계정 API 연결</b>
+          </div>
+          <span id="accountKeyState" class="tiny-chip">미연결</span>
+        </div>
+        <p>각 계정의 API Key를 연결하면 계정 내 Lv.200+ 캐릭터를 자동으로 가져옵니다.</p>
+        <input id="accountApiKey" class="api-key-input" type="password" autocomplete="off" placeholder="x-nxopen-api-key" />
+        <label class="remember-key"><input id="rememberApiKey" type="checkbox" /> <span>이 브라우저에 키 저장</span></label>
+        <div class="account-connect-actions">
+          <button id="syncAccountBtn" class="btn primary" type="button">계정 캐릭터 동기화</button>
+          <button id="clearApiKeyBtn" class="btn subtle" type="button">연결 해제</button>
+        </div>
+        <small id="accountSyncMeta" class="account-sync-meta">API Key는 저장소에 기록되지 않습니다.</small>
+      </section>
+
+      <section class="side-section roster-section">
+        <div class="side-section-head">
+          <div>
+            <div class="side-label">CHARACTERS</div>
+            <b>관리 캐릭터</b>
+          </div>
+          <span id="rosterCount" class="tiny-chip">0</span>
+        </div>
+        <div id="characterRoster" class="character-roster"></div>
+      </section>
+
+      <div class="sidebar-footer">
+        <span id="apiStatus" class="status-dot-line"><i></i> API 상태 확인 중</span>
+        <small>Data based on NEXON Open API</small>
       </div>
+    </aside>
+
+    <div class="content-shell">
+      <header class="topbar">
+        <div class="topbar-title">
+          <span class="mobile-brand">MapleManage</span>
+          <div>
+            <span>현재 계정</span>
+            <b id="worldTitle">계정 1</b>
+          </div>
+        </div>
+        <form id="addCharacterForm" class="character-search">
+          <span class="search-icon">⌕</span>
+          <input id="characterNameInput" type="text" autocomplete="off" maxlength="20" placeholder="닉네임 검색 또는 수동 추가" />
+          <button type="submit" class="btn search-button">추가</button>
+        </form>
+        <button id="refreshAllBtn" class="btn refresh-all" type="button">계정 전체 갱신</button>
+      </header>
+
+      <main class="main-content">
+        <section class="welcome-strip">
+          <div>
+            <span class="eyebrow">PERSONAL MAPLE MANAGEMENT</span>
+            <h1>오늘 할 일부터 풀심볼까지 한 화면에서.</h1>
+            <p>두 계정을 분리 관리하고, 공식 API 데이터와 개인 루틴 계산을 결합합니다.</p>
+          </div>
+          <div class="welcome-badges">
+            <span>2 ACCOUNT</span><span>SYMBOL ETA</span><span>TOP 90 CRYSTAL</span>
+          </div>
+        </section>
+
+        <section id="worldSummary" class="world-summary"></section>
+
+        <section class="dashboard-grid">
+          <div class="primary-column">
+            <div id="characterDetail" class="character-detail"></div>
+          </div>
+          <aside class="insight-column">
+            <section class="insight-card">
+              <div class="card-heading"><span>ACCOUNT PULSE</span><b>계정 진행 현황</b></div>
+              <div id="accountPulse" class="account-pulse"></div>
+            </section>
+            <section class="insight-card">
+              <div class="card-heading"><span>QUICK GUIDE</span><b>관리 기준</b></div>
+              <ul class="guide-list">
+                <li><b>일퀘</b><span>해금 지역 EXP 합산</span></li>
+                <li><b>몬파</b><span>주 14회 무료분 기준</span></li>
+                <li><b>결정석</b><span>캐릭 12개 · 계정 상위 90개</span></li>
+                <li><b>심볼</b><span>일퀘만 수행한 만렙 ETA</span></li>
+              </ul>
+            </section>
+            <section class="insight-card compact-card">
+              <div class="card-heading"><span>NOTICE</span><b>API 안내</b></div>
+              <p>NEXON 데이터는 평균 약 15분 지연될 수 있습니다. GitHub Pages에서는 입력한 키로 NEXON API를 직접 호출합니다.</p>
+            </section>
+          </aside>
+        </section>
+      </main>
+
+      <footer class="page-footer">
+        <span>MapleManageForMe · 개인용 관리 도구</span>
+        <span>Data based on NEXON Open API · MapleScouter의 정보 계층을 참고해 별도 구현</span>
+      </footer>
     </div>
-  </header>
-
-  <main class="page-shell" id="dashboard">
-    <section class="hero-search">
-      <div>
-        <p class="eyebrow">NEXON OPEN API · PERSONAL DASHBOARD</p>
-        <h1>내 캐릭터 진행도를 한 화면에서 관리</h1>
-        <p>레벨·경험치·캐릭터 외형·심볼은 공식 API로 갱신하고, 일퀘·몬파·주보는 개인 루틴으로 관리합니다.</p>
-      </div>
-      <form id="addCharacterForm" class="search-form">
-        <label for="characterNameInput">캐릭터 추가</label>
-        <div class="search-control">
-          <input id="characterNameInput" type="text" autocomplete="off" placeholder="메이플 캐릭터 닉네임" maxlength="20" />
-          <button class="btn search-btn" type="submit">검색 · 추가</button>
-        </div>
-      </form>
-    </section>
-
-    <section class="account-bar">
-      <div id="worldTabs" class="world-tabs" aria-label="계정 선택"></div>
-      <div class="account-heading">
-        <div>
-          <span>현재 관리 계정</span>
-          <h2 id="worldTitle">계정 1</h2>
-        </div>
-        <p>결정석은 캐릭터당 최대 12개, 계정 요약은 상위 90개를 기준으로 계산합니다.</p>
-      </div>
-    </section>
-
-    <section class="world-summary" id="worldSummary" aria-label="계정 요약"></section>
-
-    <section id="characters" class="character-section">
-      <div class="section-heading">
-        <div>
-          <span class="section-kicker">CHARACTER MANAGEMENT</span>
-          <h2>캐릭터 관리</h2>
-        </div>
-        <p>API 데이터는 평균 지연이 있을 수 있습니다. 수동 체크 상태는 브라우저에 저장됩니다.</p>
-      </div>
-      <div id="characterList" class="character-list"></div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <div>
-      <b>메할일</b>
-      <span>NEXON Open API 기반 개인용 관리 도구</span>
-    </div>
-    <span>데이터 계산 기준은 프로젝트 DATA_SOURCES.md에 기록됩니다.</span>
-  </footer>
+  </div>
 
   <template id="characterTemplate">
-    <article class="character-card">
-      <aside class="character-visual">
-        <div class="avatar-frame">
-          <img class="character-image" alt="캐릭터 외형" loading="lazy" />
-          <div class="avatar-placeholder" hidden>
-            <span>CHARACTER</span>
-            <b>API IMAGE</b>
-          </div>
+    <article class="profile-card">
+      <section class="profile-hero">
+        <div class="hero-avatar-wrap">
+          <div class="hero-avatar-bg"></div>
+          <img class="character-image" alt="캐릭터 외형" />
+          <div class="avatar-placeholder"><span>CHARACTER</span><b>API IMAGE</b></div>
         </div>
-        <div class="identity">
-          <div class="identity-title">
-            <h3 class="character-name"></h3>
-            <span class="level-badge"></span>
+        <div class="hero-identity">
+          <div class="identity-line"><span class="world-badge"></span><span class="class-badge"></span></div>
+          <div class="name-row"><h2 class="character-name"></h2><span class="level-badge"></span></div>
+          <div class="exp-summary"><b class="exp-caption"></b><span>현재 경험치</span></div>
+          <div class="exp-bar"><div class="exp-fill"></div></div>
+          <div class="hero-meta-grid">
+            <div><span>전투력</span><b class="combat-power"></b></div>
+            <div><span>목표 레벨</span><b class="target-level-display"></b></div>
+            <div><span>API 갱신</span><b class="last-api-time"></b></div>
           </div>
-          <p class="character-meta"></p>
-          <p class="combat-power"></p>
           <p class="character-api-state"></p>
         </div>
-        <div class="profile-actions">
-          <button class="btn compact refresh-character" type="button">API 갱신</button>
-          <button class="btn compact danger remove-character" type="button">삭제</button>
+        <div class="hero-actions">
+          <button class="btn primary refresh-character" type="button">이 캐릭터 API 갱신</button>
+          <button class="btn subtle remove-character" type="button">관리 목록에서 제거</button>
         </div>
-      </aside>
+      </section>
 
-      <div class="character-content">
+      <section class="kpi-row character-kpis"></section>
+
+      <div class="detail-grid">
         <section class="panel level-panel">
-          <div class="panel-title-row">
-            <div><span class="panel-kicker">LEVEL</span><h4>레벨 시뮬레이터</h4></div>
-            <strong class="exp-caption"></strong>
-          </div>
-          <div class="exp-bar" aria-label="현재 경험치"><div class="exp-fill"></div></div>
-          <div class="form-grid level-form">
+          <div class="panel-head"><div><span>LEVEL SIMULATOR</span><h3>레벨업 예상</h3></div><span class="panel-note">일퀘 + 몬파</span></div>
+          <div class="form-grid">
             <label>현재 EXP (%)<input class="current-exp" type="number" min="0" max="100" step="0.001" /></label>
             <label>목표 레벨<input class="target-level" type="number" min="200" max="300" /></label>
             <label>몬파 주간 배정<input class="mp-runs" type="number" min="0" max="14" step="1" /></label>
-            <label class="toggle-field"><input class="daily-exp-enabled" type="checkbox" /><span>ETA에 일퀘 EXP 반영</span></label>
+            <label class="toggle-field"><input class="daily-exp-enabled" type="checkbox" /><span>일퀘 EXP 반영</span></label>
           </div>
           <div class="metrics level-metrics"></div>
-          <p class="panel-footnote">레벨 ETA는 해당 캐릭터가 해금된 일일 퀘스트 EXP를 매일 수령하고, 설정한 몬파 주간 횟수를 지속한다고 가정합니다.</p>
         </section>
 
         <section class="panel routine-panel">
-          <div class="panel-title-row">
-            <div><span class="panel-kicker">ROUTINE</span><h4>오늘 / 이번 주</h4></div>
+          <div class="panel-head"><div><span>DAILY / WEEKLY</span><h3>오늘 할 일</h3></div><span class="panel-note">자동 초기화</span></div>
+          <div class="routine-list">
+            <label class="routine-item"><input class="task-daily" type="checkbox" /><span><b>심볼 일퀘</b><small class="daily-reset-label"></small></span><em>DAILY</em></label>
+            <label class="routine-item"><input class="task-mp" type="checkbox" /><span><b>몬스터파크 2회</b><small>월드 무료분 관리</small></span><em>DAILY</em></label>
+            <label class="routine-item"><input class="task-boss" type="checkbox" /><span><b>주간보스</b><small class="weekly-reset-label"></small></span><em>WEEKLY</em></label>
           </div>
-          <div class="routine-grid">
-            <label class="routine-item"><input class="task-daily" type="checkbox" /><span><b>심볼 일퀘</b><small class="daily-reset-label"></small></span></label>
-            <label class="routine-item"><input class="task-mp" type="checkbox" /><span><b>몬스터파크</b><small>오늘 무료 2회</small></span></label>
-            <label class="routine-item"><input class="task-boss" type="checkbox" /><span><b>주간보스</b><small class="weekly-reset-label"></small></span></label>
-          </div>
-        </section>
-
-        <section class="panel boss-panel">
-          <div class="panel-title-row">
-            <div><span class="panel-kicker">WEEKLY BOSS</span><h4>주간보스 / 결정석</h4></div>
-            <span class="panel-note">상한 이하 최대 12개</span>
-          </div>
-          <div class="boss-topline">
-            <label>주간보스 상한<select class="boss-cap"></select></label>
-            <div class="metrics boss-metrics"></div>
-          </div>
-          <div class="boss-list"></div>
-        </section>
-
-        <section class="panel symbol-panel">
-          <div class="panel-title-row">
-            <div><span class="panel-kicker">SYMBOL</span><h4>심볼 진행도</h4></div>
-            <span class="panel-note">API 자동 조회 · 일퀘만 기준</span>
-          </div>
-          <div class="symbol-summary"></div>
-          <div class="symbol-groups"></div>
         </section>
       </div>
+
+      <section class="panel symbol-panel">
+        <div class="panel-head"><div><span>SYMBOL PROGRESS</span><h3>심볼 진행도</h3></div><span class="panel-note">지역별 자동 계산</span></div>
+        <div class="symbol-summary"></div>
+        <div class="symbol-groups"></div>
+      </section>
+
+      <section class="panel boss-panel">
+        <div class="panel-head"><div><span>WEEKLY BOSS</span><h3>주간보스 · 결정석</h3></div><span class="panel-note">상한 이하 고가 12개</span></div>
+        <div class="boss-control-row">
+          <label>주간보스 상한<select class="boss-cap"></select></label>
+          <div class="boss-metrics"></div>
+        </div>
+        <div class="boss-list"></div>
+      </section>
     </article>
   </template>
 
-  <script type="module" src="/app.js"></script>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>
