@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>메할일 — 개인 캐릭터 관리실</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">MAPLE PERSONAL DASHBOARD</p>
+        <h1>메할일</h1>
+        <p class="subtitle">공식 Open API 기반 개인 캐릭터 · 심볼 · 레벨업 · 주보 관리</p>
+      </div>
+      <div class="top-actions">
+        <span id="apiStatus" class="status-chip">API 확인 중</span>
+        <button id="refreshAllBtn" class="btn primary">전체 API 갱신</button>
+      </div>
+    </header>
+
+    <section class="world-tabs" id="worldTabs"></section>
+
+    <main>
+      <section class="world-summary" id="worldSummary"></section>
+
+      <section class="toolbar">
+        <div>
+          <h2 id="worldTitle">계정 1</h2>
+          <p>캐릭터명만 등록하면 레벨·EXP·외형·심볼을 API에서 자동으로 가져옵니다.</p>
+        </div>
+        <form id="addCharacterForm" class="add-form">
+          <input id="characterNameInput" type="text" autocomplete="off" placeholder="캐릭터명" maxlength="20" />
+          <button class="btn" type="submit">캐릭터 추가</button>
+        </form>
+      </section>
+
+      <section id="characterList" class="character-list"></section>
+    </main>
+  </div>
+
+  <template id="characterTemplate">
+    <article class="character-card">
+      <aside class="character-visual">
+        <div class="avatar-frame">
+          <img class="character-image" alt="캐릭터 외형" />
+          <div class="avatar-placeholder">API<br/>IMAGE</div>
+        </div>
+        <div class="identity">
+          <h3 class="character-name"></h3>
+          <p class="character-meta"></p>
+          <p class="combat-power"></p>
+          <p class="api-time"></p>
+        </div>
+        <button class="btn compact refresh-character">API 갱신</button>
+        <button class="btn compact danger remove-character">삭제</button>
+      </aside>
+
+      <div class="character-content">
+        <section class="panel level-panel">
+          <div class="panel-title-row">
+            <h4>레벨업</h4>
+            <span class="level-badge"></span>
+          </div>
+          <div class="exp-bar"><div class="exp-fill"></div></div>
+          <div class="form-grid level-form">
+            <label>현재 EXP<input class="current-exp" type="number" min="0" max="100" step="0.001" /></label>
+            <label>목표 Lv<input class="target-level" type="number" min="200" max="300" /></label>
+            <label>몬파 주간배정<input class="mp-runs" type="number" min="0" max="14" step="1" /></label>
+            <label class="check-label"><input class="daily-exp-enabled" type="checkbox" /> 일퀘 EXP 반영</label>
+          </div>
+          <div class="metrics level-metrics"></div>
+        </section>
+
+        <section class="panel tasks-panel">
+          <h4>오늘 / 이번 주</h4>
+          <div class="task-row">
+            <label><input class="task-daily" type="checkbox" /> 오늘 심볼 일퀘</label>
+            <label><input class="task-mp" type="checkbox" /> 오늘 몬파 2회</label>
+            <label><input class="task-boss" type="checkbox" /> 이번 주 주보 완료</label>
+          </div>
+        </section>
+
+        <section class="panel symbol-panel">
+          <div class="panel-title-row">
+            <h4>심볼</h4>
+            <span class="muted">API 자동 조회 · 만렙 ETA/잔여 메소 자동 계산</span>
+          </div>
+          <div class="symbol-summary"></div>
+          <div class="symbol-groups"></div>
+        </section>
+
+        <section class="panel boss-panel">
+          <div class="panel-title-row">
+            <h4>주간보스 / 결정석</h4>
+            <span class="muted">상한 이하 고가 결정석 최대 12개</span>
+          </div>
+          <div class="form-grid boss-form">
+            <label>주간보스 상한<select class="boss-cap"></select></label>
+          </div>
+          <div class="metrics boss-metrics"></div>
+          <div class="boss-list"></div>
+        </section>
+      </div>
+    </article>
+  </template>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
